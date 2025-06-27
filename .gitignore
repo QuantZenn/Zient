@@ -1,2 +1,3 @@
 llm_cache/
 dataset/training/Core
+models/Core/model.safetensors
