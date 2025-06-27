@@ -1,0 +1,20 @@
+{
+  "tokenizer": "roberta-base",
+  "max_length": 128,
+  "total_samples": 78096,
+  "total_tokens": 2957501,
+  "avg_tokens_per_sample": 37.87007017004712,
+  "class_distribution": {
+    "negative": 26032,
+    "positive": 26032,
+    "neutral": 26032
+  },
+  "token_histogram_per_class": {
+    "negative": 796544,
+    "positive": 1210790,
+    "neutral": 950167
+  },
+  "train_size": 66381,
+  "test_size": 11715,
+  "timestamp": "2025-06-25T22:52:21.841299"
+}

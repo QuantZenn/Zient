@@ -1,0 +1,8 @@
+💡 Summary
+FormatRegistry.py
+Method	Purpose
+.load()	Loads JSON from disk into memory (_formats)
+.save()	Writes _formats back to disk
+.register(...)	Adds new format and saves it
+.match(sample)	Tries to find which format matches a given sample
+

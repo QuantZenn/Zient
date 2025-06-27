@@ -1,0 +1,47 @@
+[
+  {
+    "name": "adi007",
+    "description": "Extracts instruction from Adi007-style prompt format",
+    "match_rule": {
+      "type": "regex",
+      "pattern": "### Human:"
+    },
+    "extractor": "adi007"
+  },
+  {
+    "name": "fpb",
+    "description": "Extracts text and sentiment label from lines ending with @label",
+    "match_rule": {
+      "type": "regex",
+      "pattern": "@(positive|neutral|negative)"
+    },
+    "extractor": "fpb"
+  },
+  {
+    "name": "kaggle_fs",
+    "description": "Kaggle Financial Sentiment dataset, lines formatted as 'text,label'",
+    "match_rule": {
+      "type": "regex",
+      "pattern": "^\"?.+\"?,(positive|neutral|negative)$"
+    },
+    "extractor": "kaggle_fs"
+  },
+  {
+    "name": "lilong",
+    "description": "Dataset with 'input' as text and 'output' as mapped label",
+    "match_rule": {
+      "type": "regex",
+      "pattern": "(?i)^Input:.*\\|\\s*Output:\\s*(positive|neutral|negative)"
+    },
+    "extractor": "lilong"
+  },
+  {
+    "name": "std001",
+    "description": "Standard fallback format using various possible text/label columns",
+    "match_rule": {
+      "type": "regex",
+      "pattern": "(?i)^(text|input|title|sentence|newscontexts|newscontents):.*\\|\\s*label:\\s*(0|1|2|positive|neutral|negative)"
+    },
+    "extractor": "std001"
+  }
+]
