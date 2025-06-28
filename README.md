@@ -89,7 +89,7 @@ extractor.extract_all()
 2. Train the Model
 trainer = CoreTrainer()
 trainer.run()
-trainer.save_from_latest_checkpoint()  # Optional: generate the model from latest checkpoint, if you didnt complete trainer.run()
+#trainer.save_from_latest_checkpoint()  # Optional: generate and save the model from the latest checkpoint if training completed partially and you want to avoid retraining
 
 3. Run Model Comparison
 from ModelComparison.compare.compare_model import internal_evaluate
@@ -113,4 +113,4 @@ Add sector/ticker-specific fine-tuning
 
 ✍️ Author
 ...
-GitHub: @QuantZenn
+GitHub: @QuantZennq
