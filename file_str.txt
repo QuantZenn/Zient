@@ -1,0 +1,42 @@
+## 📦 Project Structure
+
+Zient/
+│
+├── meta/                  # Metadata or static references
+├── models/                # Saved models and checkpoints
+├── outputs/               # Prediction results
+└── src/
+    ├── AutoExtractor/
+    │   ├── extractors/
+    │   │   └── format_extractor.py
+    │   └── model/
+    │       └── AutoExtractor.py
+    │
+    ├── registry/
+    │   ├── FormatRegistry.py
+    │   └── formats.json
+    │
+    ├── ModelComparison/
+    │   ├── compare/
+    │   │   └── compare_model.py
+    │   ├── config/
+    │   │   ├── evn.py
+    │   │   └── model_cmp.py
+    │   ├── Model/
+    │   │   └── ModelComparison.py
+    │   └── ModelWrappers/
+    │       ├── ChatGPTWrapper.py
+    │       ├── CommandRPlusWrapper.py
+    │       ├── DeepSeekWrapper.py
+    │       ├── FinBERTWrapper.py
+    │       ├── GemmaWrapper.py
+    │       ├── LLaMaWrapper.py
+    │       ├── MistralWrapper.py
+    │       ├── MixtralWrapper.py
+    │       └── ZientCoreWrapper.py
+    │
+    └── ModelTrainer/
+        ├── __init__.py
+        └── CoreTrainer.py
+
+    main.py             # Entry point for running extraction/training/evaluation
