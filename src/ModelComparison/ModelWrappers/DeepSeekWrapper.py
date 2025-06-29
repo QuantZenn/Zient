@@ -17,7 +17,7 @@ class DeepSeekWrapper:
 
         os.makedirs(self.cache_dir, exist_ok=True)
         os.makedirs(self.offload_dir, exist_ok=True)
-        os.makedirs("outputs", exist_ok=True)
+        os.makedirs(self.output_path.parent, exist_ok=True)
 
         if force_download or not any(self.cache_dir.iterdir()):
             print(f"[INFO] Downloading model: {self.model_id}")
@@ -34,14 +34,15 @@ class DeepSeekWrapper:
         )
         self.model.eval()
 
-    def _parse_response(self, response_text: str) -> dict:
+    def _parse_response(self, response_text: str) -> Union[dict, None]:
         text = response_text.lower().strip()
-        label = "neutral"
         if "positive" in text:
-            label = "positive"
+            return {"predicted_label": "positive", "confidence": None}
         elif "negative" in text:
-            label = "negative"
-        return {"predicted_label": label, "confidence": None}
+            return {"predicted_label": "negative", "confidence": None}
+        elif "neutral" in text:
+            return {"predicted_label": "neutral", "confidence": None}
+        return None  # ✅ Skip if not a valid sentiment
 
     def _extract_qualitative_confidence(self, text: str) -> str:
         text = text.lower()
@@ -53,7 +54,7 @@ class DeepSeekWrapper:
             return "somewhat"
         return "none"
 
-    def _predict_single(self, text: str) -> dict:
+    def _predict_single(self, text: str) -> Union[dict, None]:
         prompt = (
             "You are a financial sentiment analysis model. "
             "Classify the sentiment in the following financial text as Positive, Neutral, or Negative. "
@@ -64,7 +65,10 @@ class DeepSeekWrapper:
         with torch.no_grad():
             outputs = self.model.generate(**inputs, max_new_tokens=10)
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
         result = self._parse_response(decoded)
+        if result is None:
+            return None
 
         followup_prompt = (
             f"How confident are you in your classification of the sentiment above? "
@@ -92,9 +96,18 @@ class DeepSeekWrapper:
             raise ValueError("DataFrame must contain a 'text' column.")
 
         df = input_data.copy()
-        predictions = [self._predict_single(text) for text in df["text"].tolist()]
-        df["predicted_label"] = [p["predicted_label"] for p in predictions]
-        df["confidence"] = [p["confidence"] for p in predictions]
+        valid_preds = []
+        valid_indices = []
+
+        for i, text in enumerate(df["text"].tolist()):
+            result = self._predict_single(text)
+            if result:
+                valid_preds.append(result)
+                valid_indices.append(i)
+
+        df = df.iloc[valid_indices].copy()
+        df["predicted_label"] = [r["predicted_label"] for r in valid_preds]
+        df["confidence"] = [r["confidence"] for r in valid_preds]
 
         if "label" not in df.columns:
             df["label"] = None

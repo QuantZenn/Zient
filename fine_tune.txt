@@ -1,0 +1,133 @@
+GOAL: this would be to finetune Zient-Core, which would be good for simple statemnt sentiments. 
+- I would hope to finetune for specific ticker, this way we can read news articles or statements, live,
+  then asses how the news would impacat the price in the coming, minutes, hours, and closing.
+- Since, Zient-Core would be great at giving an inital statments and confidence, maybe the goal of this model -
+  would be a project impact in the direction, of the initail sentiment and cofidence or a well crafted final 
+  confidence and sentiment.
+- live model woould be different as we can only feed few datas live, but hope to predicted the future
+- the goal would b to have a market sentiment tracker where we can take in news calculate or do llm to determine,
+  the market sentiment of the direction it will go long, term, short term
+- maybe using the impacted score to adjusted the final senitment and confidence level, 
+  this way we can finetune how a ticker could respond to specific news and types,
+  and a more accurate views of predictions on how they should repsonds to certain news 
+- or we can show how previous news have affected the stock and then further teain with all the data nalaysis to more or fine tune 
+  for beter accuractly and confidences
+  
+Model projects names: Zient-Iment, Zient-RX, Zient-Impact, Zient-PMS, Zient-IMS, Zient-Core-R, Zient-Core-Impact, Core-RX, Corepact...
+
+column, desc
+- BASE METADATA
+ticker, the ticker's name - symbol
+sector, what sector is the ticker in, e.g. Tech, Health, ...
+source, source name, like reddit, Bloomberg, e.t.column
+news_timestamp, the time the news was released, preferrable in UTC, UNIX SIP
+news_contents, summary of the new article or statements
+initial_sentiment, from the core model, how would the model describe the news_contents - positive, negative, neutral
+initial_confidence, from the core model, how confident is the model in the initial senitment 
+
+- PRICE REACTION COLUMNS
+price_at_news, the price at the timestamp of the news
+price_1m_af, the price 1 min after the news was released
+price_5m_af, price 5 min "" ""
+price_15m_af, price 15 min "" ""
+price_30m_af, price 30 min "" ""
+price_45m_af, price 45 min "" ""
+price_1h_af, price 1 hour "" ""
+price_close, closing price of the day
+
+volume_at_news, volume of the ticker at the news timestamp
+volume_1m_af, volume of the ticker 1 min after the news was released
+volume_5m_af,
+volume_15m_af,
+volume_30m_af,
+volume_45m_af,
+volume_1h_af,
+volume_close, volume at the close of market
+
+pct_change_1m, % change from price_at_news to price_1m_af
+pct_change_5m,
+pct_change_15m,
+pct_change_30m,
+pct_change_45m,
+pct_change_1h,
+pct_change_close,
+
+SENTIMENT-IMPACT ALIGNMENT SCORE
+impt_scr_1m, impact score, how much did the news affect the price and its movement
+impt_scr_5m,
+impt_scr_15m,
+impt_scr_30m,
+impt_scr_45m,
+impt_scr_1h,
+impt_scr_close,
+
+mgtd_scr     # magnitude score, measures how much the price changed after the news drop, relative to original
+vcty_scr     # velocity score, measures how quickly the price moved after the news
+impt_scr     # impact score, weighted mean 
+
+
+| Score Type          | Formula                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| Magnitude Score     | $\frac{\Delta \text{Price}}{\text{Volatility} \times \text{Price}_{\text{before}}}$ |
+| Velocity Score      | $\frac{1}{\log(1 + \text{Minutes Elapsed})}$                                        |
+| Impact Score (Raw)  | $\text{Magnitude} \times \text{Velocity}$                                           |
+| Impact Score (Norm) | $\arctan(\text{Impact Score}_{\text{raw}})$                                         |
+
+
+
+TECHNICAL - INDICATORS 
+vlty_at_new, the volatility at the news timestamp,
+vlty_1m_af, 
+vlty_5m_af,
+vlty_15m_af,
+vlty_30m_af,
+vlty_45m_af,
+vlty_1h_af,
+
+rsi_at_news, the rsi at news timestamp
+rsi_1m_af,
+rsi_5m_af,
+rsi_15m_af,
+rsi_30m_af,
+rsi_45m_af,
+rsi_1h_af,
+
+..., might include other price movement and market senitment technical indicators 
+
+ADDITIONAL METADATA
+scheduled, if the news was related to a scheduled event, or surprised news
+internal, if the news from the company or from an external soruce
+
+
+MARKET EVENT FLAGS
+is_earnings_day, True of False
+Other events like, FOMC, is_intraday_news (released during market hours), CPI_release, Jobs Report, and may more
+
+
+EXPERIMENTAL - I POSSIBLE
+news_importance, - (high, medium, low) maybe included how is the news (or the finetuning would helped differentiate how importance the new is)
+pre-sentiment, what was the general senitment around the ticker before the news released
+post-sentiment, what was the general senitment around the ticker after the news released
+sentiment_mood-change, how has the sentiment be skewed from pre to post, how can we measure this, difference and skeweness in senitiment
+event_normalization, how normal is the event, how often it hapens suprised events are news are more likely to ave better impact
+number of news source,```
+
+News Importance Score Explanantion:
+Option 1: 
+Option 1: Rule-Based (First pass)
+Source Tier	Example Sources	news_importance_score
+Tier 1 – High	Bloomberg, Reuters, SEC filings	1.0
+Tier 2 – Medium	Twitter (verified), CNBC, Yahoo Finance	0.6
+Tier 3 – Low	Reddit, unverified social, blogs	0.2
+
+Option 2:
+- Delayed price movement proxy, see the price movement after the news was related higher impact, higher improtance,
+- this way we can train of pass data to see how the price movement from certain source has affected the pricing movement
+
+LABEL
+- what the lable be? impact? confidence? senitment?? what are we measuring towars, waht are we training towards 
+
+
+Relative Sentiment Index
+
+for us Relative Impact Score

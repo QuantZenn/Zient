@@ -43,10 +43,10 @@ Zient/
     │       └── ZientCoreWrapper.py
     │
     └── ModelTrainer/
-        ├── __init__.py
-        └── CoreTrainer.py
-
-    main.py             # Entry point for running extraction/training/evaluation
+    │   ├── __init__.py
+    │   └── CoreTrainer.py
+    │
+    └──  main.py             # Entry point for running extraction/training/evaluation
 ```
 
 ---

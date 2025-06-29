@@ -11,7 +11,7 @@ import torch.nn.functional as F
 class FinBERTWrapper:
     def __init__(self, force_download: bool = False):
         self.model_name = "finbert"
-        self.model_id = "yiyanghkust/finbert-tone"
+        self.model_id = "ProsusAI/finbert"
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Setup cache and model directories
@@ -45,7 +45,11 @@ class FinBERTWrapper:
         self.model.eval()
 
         # Label mapping as per FinBERT's order
-        self.label_map = {0: "neutral", 1: "positive", 2: "negative"}
+        self.label_map = {
+            0: "positive",
+            1: "negative",
+            2: "neutral"
+        }
 
     def predict_batch(self, input_data: Union[pd.DataFrame, Dataset, str, List[str]]) -> pd.DataFrame:
         # Load data into DataFrame

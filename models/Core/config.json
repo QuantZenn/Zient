@@ -1,5 +1,5 @@
 {
-  "_name_or_path": "C:\\Quant\\Market-Sentiment-Model\\models\\Core\\checkpoint-16596",
+  "_name_or_path": "C:\\Quant\\Market-Sentiment-Model\\models\\Core",
   "architectures": [
     "RobertaForSequenceClassification"
   ],

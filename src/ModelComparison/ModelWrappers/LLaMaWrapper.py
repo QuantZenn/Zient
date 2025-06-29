@@ -20,9 +20,9 @@ class LLaMAaWrapper:
         os.makedirs(self.output_path.parent, exist_ok=True)
 
         if force_download or not any(self.cache_dir.iterdir()):
-            print(f"Downloading model: {self.model_id}")
+            print(f"[INFO] Downloading model: {self.model_id}")
         else:
-            print(f"Using cached model from {self.cache_dir}")
+            print(f"[INFO] Using cached model from {self.cache_dir}")
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id, cache_dir=self.cache_dir)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -42,11 +42,11 @@ class LLaMAaWrapper:
             return "negative"
         elif "neutral" in text:
             return "neutral"
-        return None  # Skip unrecognized
+        return None
 
     def _extract_qualitative_confidence(self, text: str) -> str:
-        text = text.lower().strip()
-        if any(x in text for x in ["most", "extremely"]):
+        text = text.lower()
+        if "most" in text or "extremely" in text:
             return "most"
         elif "very" in text:
             return "very"
@@ -71,7 +71,6 @@ class LLaMAaWrapper:
         if label is None:
             return None
 
-        # Follow-up prompt for qualitative confidence
         followup_prompt = (
             f"How confident are you in your classification of the sentiment above? Choose one of: none, somewhat, very, most.\n"
             f"Sentiment: {label}"
@@ -102,10 +101,10 @@ class LLaMAaWrapper:
         df = input_data.copy()
         results = []
 
-        for i, row in df.iterrows():
+        for _, row in df.iterrows():
             result = self._predict_single(row["text"])
             if result is None:
-                continue  # Skip invalid/unclassifiable
+                continue
             entry = {
                 "text": row["text"],
                 "predicted_label": result["predicted_label"],
@@ -117,9 +116,8 @@ class LLaMAaWrapper:
 
         result_df = pd.DataFrame(results)
         if not result_df.empty:
-            if "label" in result_df.columns:
-                result_df = result_df[["text", "label", "predicted_label", "confidence"]]
-            else:
-                result_df = result_df[["text", "predicted_label", "confidence"]]
+            if "label" not in result_df.columns:
+                result_df["label"] = None
+            result_df = result_df[["text", "label", "predicted_label", "confidence"]]
             result_df.to_csv(self.output_path, index=False)
         return result_df

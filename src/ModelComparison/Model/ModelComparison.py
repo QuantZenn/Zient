@@ -31,15 +31,55 @@ class ModelComparison:
             else:
                 self.models[name] = get_model_instance(name, force_download=force_download)
 
+    def _parse_labeled_line(self, line: str, valid_labels: set) -> Optional[Dict[str, str]]:
+        for label in valid_labels:
+            tag = f"@{label}"
+            if tag in line:
+                text = line.replace(tag, "").strip()
+                return {"text": text, "label": label} if text else None
+        return None  # No valid label found
+
+    def _load_from_txt(self, path: Path) -> pd.DataFrame:
+        valid_labels = {"positive", "neutral", "negative"}
+        examples = []
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except UnicodeDecodeError:
+            with open(path, "r", encoding="latin1") as f:
+                lines = f.readlines()
+
+        for line in lines:
+            parsed = self._parse_labeled_line(line.strip(), valid_labels)
+            if parsed:
+                examples.append(parsed)
+
+        return pd.DataFrame(examples)
+
+    def _load_from_csv(self, path: Path) -> pd.DataFrame:
+        try:
+            return pd.read_csv(path)
+        except UnicodeDecodeError:
+            return pd.read_csv(path, encoding="latin1")
+    
     def load_dataset(self, dataset: Union[str, pd.DataFrame, HFDataset]) -> pd.DataFrame:
         if isinstance(dataset, str):
-            return pd.read_csv(dataset)
+            path = Path(dataset)
+
+            if path.suffix == ".txt":
+                return self._load_from_txt(path)
+            else:
+                return self._load_from_csv(path)
+
         elif isinstance(dataset, pd.DataFrame):
             return dataset.copy()
+
         elif isinstance(dataset, HFDataset):
             return dataset.to_pandas()
+
         else:
-            raise TypeError("Unsupported dataset type. Use CSV path, DataFrame, or HuggingFace Dataset.")
+            raise TypeError("Unsupported dataset type. Use CSV path, TXT path, DataFrame, or HuggingFace Dataset.")
 
     def evaluate(
         self,
@@ -63,11 +103,22 @@ class ModelComparison:
             summary_path = base_output_dir / f"summary.csv"
 
         # Convert numeric labels to string sentiment labels
+        # Normalize labels (convert numeric to string sentiment, but preserve valid strings)
         label_mapping = {
             0: "negative", 1: "neutral", 2: "positive",
             "0": "negative", "1": "neutral", "2": "positive"
         }
-        df[label_col] = df[label_col].map(label_mapping)
+
+        df[label_col] = df[label_col].map(label_mapping).fillna(df[label_col])
+
+        # Drop rows with invalid or missing labels
+        valid_labels = {"positive", "neutral", "negative"}
+        df = df[df[label_col].isin(valid_labels)].copy()
+
+        # Optional: fail early if nothing left
+        if df.empty:
+            raise ValueError("After cleaning, dataset is empty — likely due to invalid or missing labels.")
+        
         all_predictions = []
         summary_metrics = []
 

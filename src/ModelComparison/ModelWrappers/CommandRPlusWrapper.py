@@ -34,14 +34,15 @@ class CommandRPlusWrapper:
         )
         self.model.eval()
 
-    def _parse_response(self, response_text: str) -> dict:
+    def _parse_response(self, response_text: str) -> Union[dict, None]:
         response_text = response_text.lower().strip()
         if "positive" in response_text:
             return {"predicted_label": "positive", "confidence": None}
         elif "negative" in response_text:
             return {"predicted_label": "negative", "confidence": None}
-        else:
+        elif "neutral" in response_text:
             return {"predicted_label": "neutral", "confidence": None}
+        return None  # ✅ Skip if response is invalid
 
     def _extract_qualitative_confidence(self, text: str) -> str:
         text = text.lower()
@@ -53,7 +54,7 @@ class CommandRPlusWrapper:
             return "somewhat"
         return "none"
 
-    def _predict_single(self, text: str) -> dict:
+    def _predict_single(self, text: str) -> Union[dict, None]:
         sentiment_prompt = (
             "You are a financial sentiment analysis model. "
             "Classify the sentiment in the following financial text as Positive, Neutral, or Negative. "
@@ -66,8 +67,10 @@ class CommandRPlusWrapper:
         decoded = self.tokenizer.decode(output[0], skip_special_tokens=True)
 
         result = self._parse_response(decoded)
+        if result is None:
+            return None  # ❌ Skip if invalid
 
-        # Confidence estimation prompt
+        # Estimate qualitative confidence
         confidence_prompt = (
             f"How confident are you in your classification of the sentiment above? "
             f"Choose one of: none, somewhat, very, most.\nSentiment: {result['predicted_label']}"
@@ -81,7 +84,6 @@ class CommandRPlusWrapper:
         return result
 
     def predict_batch(self, input_data: Union[List[str], pd.DataFrame, str, Dataset]) -> pd.DataFrame:
-        # Handle various input formats
         if isinstance(input_data, str) and input_data.endswith(".csv"):
             input_data = pd.read_csv(input_data)
         elif isinstance(input_data, Dataset):
@@ -95,10 +97,18 @@ class CommandRPlusWrapper:
             raise ValueError("DataFrame must contain a 'text' column.")
 
         df = input_data.copy()
-        predictions = [self._predict_single(text) for text in df["text"].tolist()]
+        valid_preds = []
+        valid_indices = []
 
-        df["predicted_label"] = [p["predicted_label"] for p in predictions]
-        df["confidence"] = [p["confidence"] for p in predictions]
+        for i, text in enumerate(df["text"].tolist()):
+            result = self._predict_single(text)
+            if result:
+                valid_preds.append(result)
+                valid_indices.append(i)
+
+        df = df.iloc[valid_indices].copy()
+        df["predicted_label"] = [r["predicted_label"] for r in valid_preds]
+        df["confidence"] = [r["confidence"] for r in valid_preds]
 
         if "label" not in df.columns:
             df["label"] = None

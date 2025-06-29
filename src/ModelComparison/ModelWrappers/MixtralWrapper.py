@@ -11,9 +11,9 @@ class MixtralWrapper:
     def __init__(self, force_download: bool = False):
         self.model_name = "mixtral"
         self.model_id = "mistralai/Mixtral-8x7B-Instruct-v0.1"
-        self.cache_dir = Path(__file__).resolve().parents[3] / "llm_cache" / self.model_name
-        self.offload_dir = self.cache_dir / "offload"
         self.base_dir = Path(__file__).resolve().parents[3]
+        self.cache_dir = self.base_dir / "llm_cache" / self.model_name
+        self.offload_dir = self.cache_dir / "offload"
         self.output_path = self.base_dir / "outputs" / f"{self.model_name}_predictions.csv"
 
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -43,11 +43,11 @@ class MixtralWrapper:
             return "negative"
         elif "neutral" in text:
             return "neutral"
-        return None  # skip unclear response
+        return None  # Skip unrecognized
 
     def _extract_qualitative_confidence(self, text: str) -> str:
         text = text.lower().strip()
-        if any(x in text for x in ["most", "extremely"]):
+        if "most" in text or "extremely" in text:
             return "most"
         elif "very" in text:
             return "very"
@@ -62,28 +62,26 @@ class MixtralWrapper:
             "Respond with only the sentiment word.\n\n"
             f"Text: {text}\nSentiment:"
         )
-
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
             outputs = self.model.generate(**inputs, max_new_tokens=10)
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-
         label = self._parse_response(decoded)
         if label is None:
-            return None  # Skip unknown
+            return None
 
-        followup_prompt = (
+        conf_prompt = (
             f"How confident are you in your classification of the sentiment above? "
             f"Choose one of: none, somewhat, very, most.\nSentiment: {label}"
         )
-        followup_inputs = self.tokenizer(followup_prompt, return_tensors="pt").to(self.model.device)
+        conf_inputs = self.tokenizer(conf_prompt, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
-            followup_outputs = self.model.generate(**followup_inputs, max_new_tokens=10)
-        followup_decoded = self.tokenizer.decode(followup_outputs[0], skip_special_tokens=True)
+            conf_outputs = self.model.generate(**conf_inputs, max_new_tokens=10)
+        conf_decoded = self.tokenizer.decode(conf_outputs[0], skip_special_tokens=True)
 
         return {
             "predicted_label": label,
-            "confidence": self._extract_qualitative_confidence(followup_decoded)
+            "confidence": self._extract_qualitative_confidence(conf_decoded)
         }
 
     def predict_batch(self, input_data: Union[List[str], pd.DataFrame, str, Dataset]) -> pd.DataFrame:
@@ -94,7 +92,7 @@ class MixtralWrapper:
         elif isinstance(input_data, list):
             input_data = pd.DataFrame({"text": input_data})
         elif not isinstance(input_data, pd.DataFrame):
-            raise ValueError("Unsupported input type. Provide list, DataFrame, Dataset, or CSV path.")
+            raise ValueError("Unsupported input type. Provide list, DataFrame, Dataset, or path to CSV.")
 
         if "text" not in input_data.columns:
             raise ValueError("Input must contain a 'text' column.")
@@ -117,10 +115,10 @@ class MixtralWrapper:
 
         result_df = pd.DataFrame(results)
         if not result_df.empty:
+            columns = ["text", "predicted_label", "confidence"]
             if "label" in result_df.columns:
-                result_df = result_df[["text", "label", "predicted_label", "confidence"]]
-            else:
-                result_df = result_df[["text", "predicted_label", "confidence"]]
+                columns.insert(1, "label")
+            result_df = result_df[columns]
             result_df.to_csv(self.output_path, index=False)
 
         return result_df

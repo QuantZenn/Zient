@@ -216,6 +216,9 @@ class CoreTrainer:
 
         model.config.id2label = {0: "negative", 1: "neutral", 2: "positive"}
         model.config.label2id = {"negative": 0, "neutral": 1, "positive": 2}
+
+        model.config._name_or_path = str(self.model_output_path)
+
         model.config.save_pretrained(self.model_output_path)
 
         tokenizer = RobertaTokenizerFast.from_pretrained(self.model_name)
